@@ -1,0 +1,77 @@
+Wordpress Network push-button deployment and automated setup
+Copyright 2010 Chicago Tribune
+
+This tutorial is written for folks on Mac OS X. Much of the instructions will work on any Unix variant. If you're on Windows, I'd love to hear how you got this to work.
+
+You'll need to have fabric installed.
+
+$ sudo easy_install fabric
+
+Lets grab the scripts for this tutorial. You can clone them from github here. Next you need to grab the latest wordpress. Download and unzip the wordpress archive. You want to take all the files from the wordpress folder created by the archive and move them to the folder you just cloned from github with all your fancy new scripts. 
+
+$ git clone http://github.com/newsapps/wordpress-deploy wordpress-deploy
+$ cd wordpress-deploy
+$ curl -O http://wordpress.org/latest.tar.gz
+$ tar -zxf latest.tar.gz
+$ mv wordpress/* .
+$ rmdir wordpress
+
+To get this new mess of code to do anything interesting, you will need an Apache, PHP and MySQL stack on your machine. We do all wordpress development locally and deploy stuff to a server when we want to test or show off our work. Since we all work on Mac OS X, we decided to use MAMP for development. We chose MAMP because it's a tight package that made it trivial for everyone to get running quickly. Feel free to setup your stack however you like, but this tutorial assumes you're using MAMP.
+
+http://www.mamp.info/en/index.html
+
+Out of the box, MAMP needs a few tweaks before it will serve our project. Download the latest version, install it to your Applications folder and run the MAMP application. MAMP will immediately start Apache and MySql and open its web control panel in your browser.
+
+Find MAMP on your dock and click it to bring up the status window. Click "Preferences...". Under the "Ports" tab, set the Apache port to 80. Wordpress gets cranky if you try to run it on a port other than port 80. Under the "Apache" tab, change the "Document Root" to the project folder with your new scripts and wordpress code.
+
+If you've ever turned on web sharing, turn it off now. If you already have MySQL installed on your machine, you'll probably run into trouble.
+
+You need to add MAMP's MySQL binaries to your path, so you can use mysql from the command line.
+
+$ export PATH=$PATH:/Applications/MAMP/Library/bin
+
+Add this command to the end of your '~/.bash_profile' so you can always access the MySQL commands.
+
+$ echo "export PATH=$PATH:/Applications/MAMP/Library/bin" >> ~/.bash_profile
+
+Add the demo wordpress domain name to your hosts file.
+
+$ sudo bash -c 'echo "127.0.0.1 my-wp-blog.dev" >> /etc/hosts'
+(If you're on Leopard or earlier, your hosts file is /private/etc/hosts)
+
+At this point you should be able to fire up a wordpress site with the demo settings. Just run the bootstrap fabric command.
+
+$ fab bootstrap
+
+You should have wordpress running now. Visit http://my-wp-blog.dev. You also should have network blogs running at http://my-wp-blog.dev/frogs/ and http://my-wp-blog.dev/rabbits/.
+
+Configuration juicyness
+
+These scripts are just a starting point. The ones we use for TribLocal are heavily customized. Dig through them and tweak to your hearts content. We've annotated them a bunch, but ask us more questions if you find something that isn't clear.
+
+The scripts:
+* fabfile.py
+  Where all the deployment settings are put. Use this to setup your production or staging server or to change settings for local development.
+* scripts/na-options.php
+  Most important file. Holds all the config information for the Wordpress side of the automatic setup.
+* scripts/na-install.php
+  First script that runs. Installs the Wordpress database, root blog and network.
+* scripts/na-postinstall.php
+  Second script that runs. Configures the root blog and network with settings from the na-options.php.
+* scripts/na-createblog.php
+  Script that creates a network blog. Pass it an index, uses that index to fetch data about the blog it should create from the $sites array in na-options.php.
+* scripts/na-setup-plugins.php
+  Enables plugins.
+
+One more thing
+
+Something that always bothered me about Wordpress is the way the domain name is stored in the database. You can't just dump and load the database in a new location without also moving the domain name. We want it to be push-button to deploy an identical copy of the site in multiple places.
+
+So I wrote a few fabric commands to shuttle a Wordpress database across servers and domain names.
+
+$ fab dump_db
+$ fab load_db
+$ fab reload_db
+
+These commands will create or load data/dump.sql.bz2. They'll correct the domain name in the Wordpress database to whatever you have defined in your fabfile. Super useful. It just pipes the database content through sed to replace the domain names.
+
