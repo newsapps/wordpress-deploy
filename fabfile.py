@@ -260,7 +260,43 @@ def check_env():
     env.run = run
 
 def get_wordpress():
+    print("Downloading and installing Wordpress...")
     with cd(env.path):
-        env.run('curl %(wp_tarball)s | tar xzf - ' % env)
+        env.run('curl -s %(wp_tarball)s | tar xzf - ' % env)
         env.run('mv wordpress/* .')
         env.run('rmdir wordpress')
+    print("Done.")
+
+def install_plugin(name, version='latest'):
+    try:
+        from lxml.html import parse
+        from lxml.cssselect import CSSSelector
+    except ImportError:
+        print("I need lxml to do this")
+        exit()
+
+    print("Looking for %s..." % name)
+
+    p = parse("http://wordpress.org/extend/plugins/%s/download/" % name)
+    sel = CSSSelector('.block-content .unmarked-list a')
+    dload_elems = sel(p)
+
+    #first is latest
+    if version == 'latest':
+        plugin_zip = dload_elems[0].attrib['href']
+        version = dload_elems[0].text
+    else:
+        plugin_zip = None
+        for e in dload_elems:
+            if e.text == 'version':
+                plugin_zip = e.attrib['href']
+                break
+
+    if not plugin_zip:
+        print("Can't find plugin %s" % name)
+        exit()
+    else:
+        print("Found version %s of %s, installing..." % (version, name) )
+        with cd(env.path+"/wp-content/plugins"):
+            env.run('curl -s %s -o %s.%s.zip' % (plugin_zip, name, version) )
+            env.run('unzip -n %s.%s.zip' % (name, version) )
