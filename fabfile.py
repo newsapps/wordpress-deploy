@@ -49,6 +49,9 @@ env.fix_perms = False
 env.sudo = local
 env.run = local
 
+# Where should I get Wordpress??
+env.wp_tarball = "http://wordpress.org/latest.tar.gz"
+
 """
 Environments
 """
@@ -255,3 +258,9 @@ def check_env():
     require('settings', provided_by=[production, staging, development, testing])
     env.sudo = sudo
     env.run = run
+
+def get_wordpress():
+    with cd(env.path):
+        env.run('curl %(wp_tarball)s | tar xzf - ' % env)
+        env.run('mv wordpress/* .')
+        env.run('rmdir wordpress')
