@@ -3,18 +3,15 @@ Copyright 2010 Chicago Tribune
 
 This tutorial is written for folks on Mac OS X. Much of the instructions will work on any Unix variant. If you're on Windows, I'd love to hear how you got this to work.
 
-You'll need to have fabric installed.
+You'll need to have fabric and lxml installed.
 
-$ sudo easy_install fabric
+$ sudo easy_install fabric lxml
 
 Lets grab the scripts for this tutorial. You can clone them from github here. Next you need to grab the latest wordpress. Download and unzip the wordpress archive. You want to take all the files from the wordpress folder created by the archive and move them to the folder you just cloned from github with all your fancy new scripts. 
 
 $ git clone http://github.com/newsapps/wordpress-deploy.git wordpress-deploy
 $ cd wordpress-deploy
-$ curl -O http://wordpress.org/latest.tar.gz
-$ tar -zxf latest.tar.gz
-$ mv wordpress/* .
-$ rmdir wordpress
+$ fab get_wordpress
 
 To get this new mess of code to do anything interesting, you will need an Apache, PHP and MySQL stack on your machine. We do all wordpress development locally and deploy stuff to a server when we want to test or show off our work. Since we all work on Mac OS X, we decided to use MAMP for development. We chose MAMP because it's a tight package that made it trivial for everyone to get running quickly. Feel free to setup your stack however you like, but this tutorial assumes you're using MAMP.
 
