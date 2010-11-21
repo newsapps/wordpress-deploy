@@ -2,13 +2,15 @@
 # Chicago Tribune News Applications fabfile
 # No copying allowed
 
+import os
+import subprocess
+import urllib
+
 from fabric.api import *
 from fabric.contrib.console import confirm
 from fabric.context_managers import cd
 
 from getpass import getpass
-
-import urllib,os
 
 """
 Base configuration
@@ -247,9 +249,15 @@ def shiva_the_destroyer():
     """
     Remove all directories, databases, etc. associated with the application.
     """
-    check_env()
-    env.run('rm -Rf %(path)s/* %(path)s/.*;' % env)
-    destroy_db()
+    try:
+        check_env()
+        env.run('rm -Rf %(path)s/* %(path)s/.*;' % env)
+        destroy_db()
+    except NameError, e:
+        with settings(warn_only=True):
+            env.run('rm .htaccess')
+            env.run('rm wp-config.php')
+        destroy_db()
 
 """
 Utilities
@@ -277,9 +285,14 @@ def install_plugin(name, version='latest'):
 
     print("Looking for %s..." % name)
 
-    p = parse("http://wordpress.org/extend/plugins/%s/download/" % name)
+    url = "http://wordpress.org/extend/plugins/%s/" % name
+    p = parse("%sdownload/" % url)
     sel = CSSSelector('.block-content .unmarked-list a')
     dload_elems = sel(p)
+
+    if not dload_elems:
+        print("Can't find plugin %s" % name)
+        exit()
 
     #first is latest
     if version == 'latest':
@@ -297,6 +310,9 @@ def install_plugin(name, version='latest'):
         exit()
     else:
         print("Found version %s of %s, installing..." % (version, name) )
-        with cd(env.path+"/wp-content/plugins"):
+        with cd(env.path + "/wp-content/plugins"):
             env.run('curl -s %s -o %s.%s.zip' % (plugin_zip, name, version) )
             env.run('unzip -n %s.%s.zip' % (name, version) )
+
+        if raw_input("Read instructions for %s? [Y|n]" % name) in ("","Y"):
+            subprocess.call(['open', url])
