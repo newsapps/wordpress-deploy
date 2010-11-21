@@ -63,8 +63,8 @@ $ms_install_result = populate_network(
 						$subdomain_install
 					);
 
-if (is_wp_error( $ms_install_result )) {
-	var_dump($wp_install_result);
+if (is_wp_error( $ms_install_result ) && $ms_install_result->get_error_code() != 'no_wildcard_dns') {
+    print($ms_install_result->get_error_message() . "\n");
 	die("Network setup failed");
 }
 
